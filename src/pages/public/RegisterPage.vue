@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { api } from '@/api/client'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -20,12 +21,7 @@ async function onSendCode() {
   error.value = ''
   sendingCode.value = true
   try {
-    await auth.$patch(async (state) => {
-      // 直接使用底层 api 发送验证码，不修改全局状态
-      await import('@/api/client').then(({ api }) =>
-        api.sendRegisterEmailCode({ email: email.value, scene: 'register' })
-      )
-    })
+    await api.sendRegisterEmailCode({ email: email.value, scene: 'register' })
     codeCountdown.value = 60
     const timer = setInterval(() => {
       if (codeCountdown.value <= 1) {
@@ -36,7 +32,7 @@ async function onSendCode() {
       }
     }, 1000)
   } catch (e) {
-    error.value = e?.message || '验证码发送失败'
+    error.value = e?.message || e?.data?.message || '验证码发送失败'
   } finally {
     sendingCode.value = false
   }
